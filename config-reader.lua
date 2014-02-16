@@ -51,6 +51,20 @@ function readers.json(filename)
 	return json.decode(fp:read("*all"))
 end
 
+function get_param_value(conf, name)
+	for part in string.gmatch(name..".", "(%w+)\.") do
+		conf = conf[part]
+	end
+	return conf
+end
+
+-- read configuration
+configs = {}
+for reader in pairs(readers) do
+	configs[reader] = readers[reader](reader .. ".conf")
+end
+
+-- for debug purposes
 function print_config(conf, indent)
 	if not (type(indent) == "number") then indent = 0 end
 	for key, value in pairs(conf) do
@@ -69,8 +83,4 @@ function print_config(conf, indent)
 	end
 end
 
-configs = {}
-for reader in pairs(readers) do
-	configs[reader] = readers[reader](reader .. ".conf")
-end
-print_config(configs)
+-- print_config(configs)
