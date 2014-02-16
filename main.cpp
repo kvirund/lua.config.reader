@@ -4,10 +4,38 @@
 
 #include <iostream>
 #include <stdexcept>
+#include <vector>
 
 #include <lua5.1/lua.hpp>
-#include <lua5.1/lauxlib.h>
-#include <lua5.1/lualib.h>
+
+static void stackDump (lua_State *L) {
+	int i;
+	int top = lua_gettop(L);
+	for (i = 1; i <= top; i++) {  /* repeat for each level */
+		int t = lua_type(L, i);
+		switch (t) {
+
+			case LUA_TSTRING:  /* strings */
+				printf("`%s'", lua_tostring(L, i));
+				break;
+
+			case LUA_TBOOLEAN:  /* booleans */
+				printf(lua_toboolean(L, i) ? "true" : "false");
+				break;
+
+			case LUA_TNUMBER:  /* numbers */
+				printf("%g", lua_tonumber(L, i));
+				break;
+
+			default:  /* other values */
+				printf("%s", lua_typename(L, t));
+				break;
+
+		}
+		printf("  ");  /* put a separator */
+	}
+	printf("\n");  /* end the listing */
+}
 
 class CConfigReader
 {
@@ -23,7 +51,6 @@ class CConfigReader
 
 		void get_param(const char *name)
 		{
-			lua_pushstring(m_state, name);
 			lua_getglobal(m_state, "get_param_value");
 			lua_getglobal(m_state, "configs");
 			lua_pushstring(m_state, name);
@@ -83,12 +110,36 @@ class CConfigReader
 		std::string readstring(const char *name)
 		{
 			get_param(name);
+			stackDump(m_state);
 			if (!lua_isstring(m_state, -1))
 			{
 				type_error();
 			}
 			const char *result = lua_tostring(m_state, -1);
 			lua_pop(m_state, 1);
+			return result;
+		}
+
+		std::vector<std::string> readarray(const char *name)
+		{
+			get_param(name);
+			if (!lua_istable(m_state, -1))
+			{
+				type_error();
+			}
+			int size = luaL_getn(m_state, 1);
+			std::vector<std::string> result(size);
+			for (int i = 1; i <= size; i++)
+			{
+				lua_rawgeti(m_state, 1, i);
+				if (!lua_isstring(m_state, -1))
+				{
+					type_error();
+				}
+				result[i - 1] = lua_tostring(m_state, -1);
+				lua_pop(m_state, 1);
+			}
+
 			return result;
 		}
 };
@@ -108,10 +159,18 @@ int main()
 		 */
 		CConfigReader config;
 		std::cout << "Name "
-			<< config.readstring("simple.fullname") << " ("
+			<< config.readstring("json.fullname") << " ("
 			<< config.readnumber("json.age") << " years old) should "
 			<< (config.readbool("json.needspelling") ? "" : "not ")
 			<< "be spelled" << std::endl;
+		std::vector<std::string> family = config.readarray("json.otherfamily");
+		if (0 < family.size())
+		{
+			for (std::vector<std::string>::const_iterator i = family.begin(); i != family.end(); i++)
+			{
+				std::cout << "\t" << *i << std::endl;
+			}
+		}
 	} catch (const std::exception &e)
 	{
 		std::cout << "An exception was occured while running the program: "
