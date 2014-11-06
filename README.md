@@ -7,4 +7,5 @@ Building
 ========
 
 $ cmake ./
+
 $ make
