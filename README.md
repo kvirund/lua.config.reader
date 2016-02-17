@@ -9,3 +9,5 @@ Building
 $ cmake ./
 
 $ make
+
+![build status](https://travis-ci.org/kvirund/lua.config.reader.svg?branch=master)
