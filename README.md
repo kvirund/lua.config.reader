@@ -10,4 +10,4 @@ $ cmake ./
 
 $ make
 
-![build status](https://travis-ci.org/kvirund/lua.config.reader.svg?branch=master)
+[![Build Status](https://travis-ci.org/kvirund/lua.config.reader.svg?branch=master)](https://travis-ci.org/kvirund/lua.config.reader)
